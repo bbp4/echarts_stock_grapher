@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>React JS Stock Market Display</title>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/3.8.5/echarts-en.js"></script>
+    
+    <style>
+        .container {
+            width:100%;
+            height:100%;
+        }
+        .chart {
+            height:300px;
+            width: 700px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header"></div>
+    <div id="app"></div>
+    <script type="text/babel">
+        var ChartForm = React.createClass({
+            getInitialState: function() {
+                return {
+                tickerSymbol: '',
+                charts: []
+                };
+            },
+            handleClick() {
+                console.log(this.state.tickerSymbol);
+                this.state.charts.push(<Chart tickerSymbol={this.state.tickerSymbol}/>);
+                ReactDOM.render(<div> {this.state.charts}</div>, document.querySelector('#app'))
+            },
+            render: function() {
+                return (
+                    <div className='container'>
+                        <input type='text' value={this.state.tickerSymbol} onChange={this.updateTickerSymbol}></input>
+                        <button  onClick={this.handleClick}>Create</button>
+                    </div>
+                )
+            },
+            updateTickerSymbol: function(evt) {
+                this.setState({
+                    tickerSymbol: evt.target.value
+                });
+            }
+        })
+        var Chart = React.createClass({
+            render: function() {
+                console.log("RENDERING CHART " + this.props.tickerSymbol)
+                return (
+                    <div className='container'>
+                    <div id= {this.props.tickerSymbol} className="chart" ></div>
+                    </div>
+                )
+            },
+            componentDidMount: function() {
+                $.getJSON('getChartData?symbol='+this.props.tickerSymbol, function(results) {
+                        console.log(results)
+                        var option = {
+                                        title: {
+                                            text: results.ticker_symbol
+                                            
+                                        },
+                                        tooltip: {
+                                            trigger: 'axis'
+                                        },
+                                        legend: {
+                                            data:['Opening Value']
+                                        },
+                                        toolbox: {
+                                            show: false,
+                                        },
+                                        xAxis:  {
+                                            type: 'category',
+                                            boundaryGap: false,
+                                            data: results.x_axis
+                                        },
+                                        yAxis: {
+                                            type: 'value'
+                                        },
+                                        series: [
+                                            {
+                                                name:'Opening Value',
+                                                type:'line',
+                                                data:results.y_axis_open,
+                                                markPoint: {
+                                                    data: [
+                                                        {type: 'max', name: 'Max'},
+                                                        {type: 'min', name: 'Min'}
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    };
+                        var myChart = echarts.init(document.getElementById(results.ticker_symbol));
+                        myChart.setOption(option);
+                        console.log("SET CHART")
+                });
+            }
+        })
+        
+        //ReactDOM.render(<div><Chart /></div>, document.querySelector('#app'))
+        ReactDOM.render(<ChartForm/>, document.querySelector('#header'))
+    </script>
+</body>
+</html>
